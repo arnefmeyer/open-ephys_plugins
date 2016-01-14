@@ -119,7 +119,7 @@ void ChannelRefEditor::saveParametersDialog()
 			}
 			else
 			{
-				CoreServices::sendStatusMessage("Saved channel reference data to file.");
+				CoreServices::sendStatusMessage("Saved channel reference data to file " + fileToSave.getFullPathName());
 			}
 			delete xml;
         }
@@ -141,11 +141,10 @@ void ChannelRefEditor::loadParametersDialog()
         if (fc.browseForFileToOpen())
         {
             File fileToOpen = fc.getResult();
-            std::cout << fileToOpen.getFileName() << std::endl;
 
 			XmlElement* xml = XmlDocument::parse(fileToOpen);
 			loadCustomParameters(xml);
-			CoreServices::sendStatusMessage("Loaded channel reference data from file.");
+			CoreServices::sendStatusMessage("Loaded channel reference data from file." + fileToOpen.getFullPathName());
 			delete xml;
         }
     } else

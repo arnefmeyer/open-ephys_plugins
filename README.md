@@ -9,8 +9,8 @@ https://github.com/open-ephys/plugin-GUI
 Installation
 ============
 
-Put the plugin directories into the "plugin" directory of the OE plugin GUI and 
-compile all plugins.
+Put the plugin directories into the Source/Plugins directory of the 
+OE plugin GUI and compile all plugins.
 
 So far, the code has only been tested under Linux (Linux Mint 17.3).
 

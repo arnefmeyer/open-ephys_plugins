@@ -231,7 +231,7 @@ void ChannelRefDisplay::drawTable()
 
 		headerLabels.add(header3);
 
-		/* Add button ma trix */
+		/* Add button matrix */
 		for (int i=0; i<nChannels; i++)
 		{
 			/* Row label */
@@ -367,7 +367,7 @@ void ChannelRefDisplay::buttonClicked(Button* b)
 
 			update();
 		}
-		else if (!state)
+		else
 		{
 			processor->getReferenceMatrix()->setValue(rowIndex, colIndex, (float)state);
 		}
