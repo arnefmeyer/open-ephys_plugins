@@ -62,18 +62,26 @@ void ChannelRefEditor::saveCustomParameters(XmlElement* xml)
 
     xml->setAttribute("Type", "ChannelRefEditor");
 
+	/* global gain */
+    XmlElement* paramXml = xml->createNewChildElement("PARAMETERS");
+    paramXml->setAttribute("GlobalGain", p->getGlobalGain());
+
+	/* references for each channel */
+	XmlElement* channelsXml = xml->createNewChildElement("REFERENCES");
+
     for (int i=0; i<nChannels; i++)
     {
 		float* ref = refMat->getChannel(i);
  
-        XmlElement* channelXml = xml->createNewChildElement("CHANNEL");
-        channelXml->setAttribute("Number", i+1);
+        XmlElement* channelXml = channelsXml->createNewChildElement("CHANNEL");
+        channelXml->setAttribute("Index", i+1);
 		for (int j=0; j<nChannels; j++)
 		{
 			if (ref[j] > 0)
 			{
 				XmlElement* refXml = channelXml->createNewChildElement("REFERENCE");
-				refXml->setAttribute("Number", j+1);
+				refXml->setAttribute("Index", j+1);
+				refXml->setAttribute("Value", ref[j]);
 			}
 		}
     }
@@ -84,14 +92,24 @@ void ChannelRefEditor::loadCustomParameters(XmlElement* xml)
 	ChannelRefNode* p = dynamic_cast<ChannelRefNode*>(getProcessor());
 	ReferenceMatrix* refMat = p->getReferenceMatrix();
 
-	forEachXmlChildElement(*xml, channelXml)
+	forEachXmlChildElementWithTagName(*xml,	paramXml, "PARAMETERS")
 	{
-		int channelIndex = channelXml->getIntAttribute("Number");
+    	float globGain = (float)paramXml->getDoubleAttribute("GlobalGain");
+		p->setGlobalGain(globGain);
+	}
 
-		forEachXmlChildElement(*channelXml, refXml)
+	forEachXmlChildElementWithTagName(*xml,	channelsXml, "REFERENCES")
+	{
+		forEachXmlChildElementWithTagName(*channelsXml,	channelXml, "CHANNEL")
 		{
-			int refIndex = refXml->getIntAttribute("Number");
-			refMat->setValue(channelIndex - 1, refIndex - 1, 1);
+			int channelIndex = channelXml->getIntAttribute("Index");
+
+			forEachXmlChildElementWithTagName(*channelXml,	refXml, "REFERENCE")
+			{
+				int refIndex = refXml->getIntAttribute("Index");
+				float gain = (float)refXml->getDoubleAttribute("Value");
+				refMat->setValue(channelIndex - 1, refIndex - 1, gain);
+			}
 		}
 	}
 

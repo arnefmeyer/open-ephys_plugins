@@ -30,7 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 ChannelRefNode::ChannelRefNode()
-    : GenericProcessor("Channel Ref"), channelBuffer(1, BUFFER_SIZE), avgBuffer(1, BUFFER_SIZE)
+    : GenericProcessor("Channel Ref"), channelBuffer(1, BUFFER_SIZE), 
+avgBuffer(1, BUFFER_SIZE), globalGain(1.0f)
 {
 	int nChannels = getNumInputs();
 	refMat = new ReferenceMatrix(nChannels);
@@ -78,7 +79,7 @@ void ChannelRefNode::process(AudioSampleBuffer& buffer,
                              MidiBuffer& midiMessages)
 {
 	float* ref;
-	float gain;
+	float refGain;
 	int numRefs;
 	int numChan = refMat->getNumberOfChannels();
 
@@ -102,8 +103,9 @@ void ChannelRefNode::process(AudioSampleBuffer& buffer,
 		{
 			if (ref[j] > 0)
 			{
-				gain = 1.0f / float(numRefs);
-				avgBuffer.addFrom(0, 0, channelBuffer, j, 0, channelBuffer.getNumSamples(), gain);
+				refGain = 1.0f / float(numRefs);
+				avgBuffer.addFrom(0, 0, channelBuffer, j, 0,
+								  channelBuffer.getNumSamples(), refGain);
 			}
 		}
 		
@@ -116,7 +118,7 @@ void ChannelRefNode::process(AudioSampleBuffer& buffer,
 						0,  			// sourceChannel
 						0, 				// sourceStartSample
 						buffer.getNumSamples(), // numSamples
-						-1.0f); 	    // gain to apply 
+						-1.0f * globalGain);  // global gain to apply 
 		}
 	}
 }
@@ -124,6 +126,16 @@ void ChannelRefNode::process(AudioSampleBuffer& buffer,
 ReferenceMatrix* ChannelRefNode::getReferenceMatrix()
 {
 	return refMat;
+}
+
+void ChannelRefNode::setGlobalGain(float value)
+{
+	globalGain = value;
+}
+
+float ChannelRefNode::getGlobalGain()
+{
+	return globalGain;
 }
 
 

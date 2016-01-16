@@ -65,19 +65,43 @@ ChannelRefCanvas::ChannelRefCanvas(ChannelRefNode* n) :
     loadButton->addListener(this);
     addAndMakeVisible(loadButton);
 
-	presets.add("None");
-	presets.add("Other tetrode electrodes (32ch)");
-	presets.add("All tetrode electrodes (32ch)");
-	presets.add("Common average reference (32ch)");
-	presets.add("Avg of other tetrodes (32ch)");
-	presets.add("Avg of next tetrode (32ch)");
+    gainSlider = new Slider("Gain");
+	gainSlider->setSliderStyle(Slider::Rotary);
+    gainSlider->setRange(0.0f, 2.0f);
+    gainSlider->setTextBoxStyle(Slider::TextBoxRight, false, 50, 30);
+    gainSlider->setValue(1.0f);
+    gainSlider->addListener(this);
+    addAndMakeVisible(gainSlider);
 
-    presetSelection = new ComboBox("Presets");
-    presetSelection->addItemList(presets, 1);
-    presetSelection->setSelectedId(1, sendNotification);
-    presetSelection->setEditableText(false);
-    presetSelection->addListener(this);
-    addAndMakeVisible(presetSelection);
+	presetNamesLabel = new Label("PresetLabel", "Preset");
+	addAndMakeVisible(presetNamesLabel);
+
+	presetNames.add("None");
+	presetNames.add("Common average reference");
+	presetNames.add("Avg of other tetrodes");
+	presetNames.add("Avg of next tetrode");
+
+    presetNamesBox = new ComboBox("Presets");
+    presetNamesBox->addItemList(presetNames, 1);
+    presetNamesBox->setSelectedId(1, sendNotification);
+    presetNamesBox->setEditableText(false);
+    presetNamesBox->addListener(this);
+    addAndMakeVisible(presetNamesBox);
+
+	channelCountLabel = new Label("ChanCountLabel", "# channels");
+	addAndMakeVisible(channelCountLabel);
+
+	for (int i=1; i<=32; i++)
+	{
+		channelCounts.add(String(i*16));
+	}
+
+    channelCountBox = new ComboBox("Channels");
+    channelCountBox->addItemList(channelCounts, 1);
+    channelCountBox->setSelectedId(1, sendNotification);
+    channelCountBox->setEditableText(false);
+    channelCountBox->addListener(this);
+    addAndMakeVisible(channelCountBox);
 
     update();
 }
@@ -118,14 +142,21 @@ void ChannelRefCanvas::resized()
     displayViewport->setBounds(20, 20, getWidth() - 40, getHeight()-90);
     resetButton->setBounds(10, getHeight()-60, 100, 20);
 	selectModeButton->setBounds(110, getHeight()-60, 100, 20);
-	presetSelection->setBounds(240, getHeight()-60, 250, 20);
 	loadButton->setBounds(10, getHeight()-30, 100, 20);
 	saveButton->setBounds(110, getHeight()-30, 100, 20);
+
+	gainSlider->setBounds(240, getHeight()-65, 120, 65);
+
+	channelCountLabel->setBounds(380, getHeight()-30, 100, 20);
+	channelCountBox->setBounds(460, getHeight()-30, 250, 20);
+	presetNamesLabel->setBounds(380, getHeight()-60, 100, 20);
+	presetNamesBox->setBounds(460, getHeight()-60, 250, 20);
 }
 
 void ChannelRefCanvas::update()
 {
 	display->update();
+	gainSlider->setValue(processor->getGlobalGain());
 }
 
 void ChannelRefCanvas::mouseDown(const MouseEvent& event)
@@ -160,12 +191,23 @@ void ChannelRefCanvas::buttonClicked(Button* b)
 
 void ChannelRefCanvas::comboBoxChanged(ComboBox* cb)
 {
-   if (cb == presetSelection)
-    {
-		String presetName = presets[cb->getSelectedId()-1];
-		display->applyPreset(presetName);
-    }
+	if (cb == presetNamesBox || cb == channelCountBox)
+	{
+		String presetName = presetNames[presetNamesBox->getSelectedId()-1];
+		String s = channelCounts[channelCountBox->getSelectedId()-1];
+		int numChannels = s.getIntValue();
+		display->applyPreset(presetName, numChannels);
+	}
 }
+
+void ChannelRefCanvas::sliderValueChanged(Slider* slider)
+{
+    if (slider == gainSlider)
+	{
+		processor->setGlobalGain(gainSlider->getValue());
+	}
+}
+
 
 
 // ----------------------------------------------------------------
@@ -374,14 +416,14 @@ void ChannelRefDisplay::buttonClicked(Button* b)
 	}
 }
 
-void ChannelRefDisplay::applyPreset(String name)
+void ChannelRefDisplay::applyPreset(String name, int numChannels)
 {
 	ReferenceMatrix* refMat = processor->getReferenceMatrix();
 	int nChannels = refMat->getNumberOfChannels();
 
-	if (name.equalsIgnoreCase("Other tetrode electrodes (32ch)"))
+	if (name.equalsIgnoreCase("Other tetrode electrodes"))
 	{
-		nChannels = MIN(nChannels, 32);
+		nChannels = MIN(nChannels, numChannels);
 		refMat->clear();
 
 		int nTetrodes = nChannels / 4;
@@ -402,9 +444,9 @@ void ChannelRefDisplay::applyPreset(String name)
 
 		drawTable();
 	}
-	else if (name.equalsIgnoreCase("All tetrode electrodes (32ch)"))
+	else if (name.equalsIgnoreCase("All tetrode electrodes"))
 	{
-		nChannels = MIN(nChannels, 32);
+		nChannels = MIN(nChannels, numChannels);
 		refMat->clear();
 
 		int nTetrodes = nChannels / 4;
@@ -422,9 +464,9 @@ void ChannelRefDisplay::applyPreset(String name)
 
 		drawTable();
 	}
-	else if (name.equalsIgnoreCase("Common average reference (32ch)"))
+	else if (name.equalsIgnoreCase("Common average reference"))
 	{
-		nChannels = MIN(nChannels, 32);
+		nChannels = MIN(nChannels, numChannels);
 		refMat->clear();
 		for (int i=0; i<nChannels; i++)
 		{
@@ -436,9 +478,9 @@ void ChannelRefDisplay::applyPreset(String name)
 
 		drawTable();
 	}
-	else if (name.equalsIgnoreCase("Avg of other tetrodes (32ch)"))
+	else if (name.equalsIgnoreCase("Avg of other tetrodes"))
 	{
-		nChannels = MIN(nChannels, 32);
+		nChannels = MIN(nChannels, numChannels);
 		refMat->clear();
 
 		/* Activate all channels and deselect channels at the same tetrode */
@@ -458,9 +500,9 @@ void ChannelRefDisplay::applyPreset(String name)
 
 		drawTable();
 	}
-	else if (name.equalsIgnoreCase("Avg of next tetrode (32ch)"))
+	else if (name.equalsIgnoreCase("Avg of next tetrode"))
 	{
-		nChannels = MIN(nChannels, 32);
+		nChannels = MIN(nChannels, numChannels);
 		refMat->clear();
 
 		int nTetrodes = nChannels / 4;

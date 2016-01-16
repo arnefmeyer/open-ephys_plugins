@@ -33,7 +33,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class ElectrodeTableButton;
 class ChannelRefDisplay;
 
-class ChannelRefCanvas : public Visualizer, public Button::Listener, public ComboBox::Listener
+class ChannelRefCanvas : public Visualizer,
+public Button::Listener,
+public ComboBox::Listener,
+public Slider::Listener
 
 {
 public:
@@ -65,6 +68,7 @@ public:
 	void mouseDown(const MouseEvent& event);
 
 	void comboBoxChanged(ComboBox* cb);
+	void sliderValueChanged(Slider* slider);
 
 private:
 
@@ -72,13 +76,18 @@ private:
 	ChannelRefNode* processor;
 	ScopedPointer<Viewport> displayViewport;
 
-	ScopedPointer<ComboBox> presetSelection;
-	StringArray presets;
+	ScopedPointer<ComboBox> presetNamesBox;
+	ScopedPointer<Label> presetNamesLabel;
+	ScopedPointer<ComboBox> channelCountBox;
+	ScopedPointer<Label> channelCountLabel;
+	StringArray presetNames;
+	StringArray channelCounts;
 
 	ScopedPointer<UtilityButton> resetButton;
 	ScopedPointer<UtilityButton> selectModeButton;
 	ScopedPointer<UtilityButton> saveButton;
 	ScopedPointer<UtilityButton> loadButton;
+	ScopedPointer<Slider> gainSlider;
 
 	OwnedArray<ElectrodeTableButton> electrodeButtons;
 
@@ -150,7 +159,7 @@ public:
 	void reset();
 	void setEnableSingleSelectionMode(bool b);
 
-	void applyPreset(String name);
+	void applyPreset(String name, int numChannels);
 
 private:
 

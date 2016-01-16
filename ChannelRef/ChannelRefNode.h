@@ -65,11 +65,15 @@ public:
 
 	ReferenceMatrix* getReferenceMatrix();
 
+	void setGlobalGain(float value);
+	float getGlobalGain();
+
 private:
 
 	ReferenceMatrix* refMat;
 	AudioSampleBuffer channelBuffer;
 	AudioSampleBuffer avgBuffer;
+	float globalGain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChannelRefNode);
 
